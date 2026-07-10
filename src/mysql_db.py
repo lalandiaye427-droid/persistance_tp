@@ -20,7 +20,8 @@ class GestionMySQL:
             password=self.password,
             database=self.database
         )
-        return conn, conn.cursor()
+        # MODIFICATION ICI : buffered=True pour vider le tampon et éviter le crash "Unread result found"
+        return conn, conn.cursor(buffered=True)
 
     def fermer(self, conn, cursor):
         """Ferme proprement le curseur et la connexion (Exigence du TP)."""
@@ -42,88 +43,37 @@ class GestionMySQL:
             cursor.execute("""
                            CREATE TABLE IF NOT EXISTS sites
                            (
-                               id
-                               INT
-                               AUTO_INCREMENT
-                               PRIMARY
-                               KEY,
-                               nom
-                               VARCHAR
-                           (
-                               100
-                           ),
-                               ville VARCHAR
-                           (
-                               100
+                               id INT AUTO_INCREMENT PRIMARY KEY,
+                               nom VARCHAR(100),
+                               ville VARCHAR(100)
                            )
-                               )
                            """)
 
             # Table 2 : Équipements (reliée à sites)
             cursor.execute("""
                            CREATE TABLE IF NOT EXISTS equipements
                            (
-                               id
-                               INT
-                               AUTO_INCREMENT
-                               PRIMARY
-                               KEY,
-                               nom
-                               VARCHAR
-                           (
-                               100
-                           ),
-                               type VARCHAR
-                           (
-                               50
-                           ),
-                               ip VARCHAR
-                           (
-                               50
-                           ),
+                               id INT AUTO_INCREMENT PRIMARY KEY,
+                               nom VARCHAR(100),
+                               type VARCHAR(50),
+                               ip VARCHAR(50),
                                actif INT DEFAULT 1,
                                id_site INT,
-                               FOREIGN KEY
-                           (
-                               id_site
-                           ) REFERENCES sites
-                           (
-                               id
-                           ) ON DELETE CASCADE
-                               )
+                               FOREIGN KEY (id_site) REFERENCES sites (id) ON DELETE CASCADE
+                           )
                            """)
 
             # Table 3 : Interfaces (reliée à equipements)
             cursor.execute("""
                            CREATE TABLE IF NOT EXISTS interfaces
                            (
-                               id
-                               INT
-                               AUTO_INCREMENT
-                               PRIMARY
-                               KEY,
-                               nom
-                               VARCHAR
-                           (
-                               50
-                           ),
-                               ip VARCHAR
-                           (
-                               50
-                           ),
-                               masque VARCHAR
-                           (
-                               50
-                           ),
+                               id INT AUTO_INCREMENT PRIMARY KEY,
+                               nom VARCHAR(50),
+                               ip VARCHAR(50),
+                               masque VARCHAR(50),
                                id_equipement INT,
-                               FOREIGN KEY
-                           (
-                               id_equipement
-                           ) REFERENCES equipements
-                           (
-                               id
-                           ) ON DELETE CASCADE
-                               )
+                               FOREIGN KEY (id_equipement) REFERENCES equipements (id) ON DELETE CASCADE
+                           )
                            """)
 
             cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
@@ -249,7 +199,7 @@ class GestionMySQL:
                     SELECT e.nom AS equipement, e.type, i.nom AS interface, i.ip
                     FROM equipements e
                              LEFT JOIN interfaces i ON e.id = i.id_equipement
-                    WHERE e.id_site = %s \
+                    WHERE e.id_site = %s
                     """
             cursor.execute(query, (id_site,))
             lignes = cursor.fetchall()
@@ -271,7 +221,7 @@ class GestionMySQL:
                     FROM interfaces i
                              JOIN equipements e ON i.id_equipement = e.id
                              JOIN sites s ON e.id_site = s.id
-                    WHERE i.ip = %s \
+                    WHERE i.ip = %s
                     """
             cursor.execute(query, (ip,))
             res = cursor.fetchone()
